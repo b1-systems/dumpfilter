@@ -74,8 +74,7 @@ class Process(collections.OrderedDict):
 def parse_config(path=None, user=False):
     parser = ConfigParser.SafeConfigParser()
     # FIXME
-    parser.read("/home/poelzi/Projects/dumpfilter/src/dumpfilter.ini")
-    parser.read("/etc/dumpfilter.conf")
+    parser.read("/etc/dumpfilter/dumpfilter.ini")
     return parser
 
 config = parse_config()
