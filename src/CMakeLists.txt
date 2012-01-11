@@ -4,6 +4,8 @@ install(FILES dumpfilter.ini
         DESTINATION ${CONFIG_PREFIX}/dumpfilter)
 install(FILES dumpfilter.gdb
         DESTINATION ${CONFIG_PREFIX}/dumpfilter)
+install(PROGRAMS zgdb
+        DESTINATION ${CONFIG_PREFIX}/dumpfilter)
 install(PROGRAMS dumpfilter.init
         RENAME dumpfilter
         DESTINATION ${CONFIG_PREFIX}/init.d)

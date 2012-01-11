@@ -1,0 +1,12 @@
+#!/bin/bash
+
+LIST=( /lib64/uncompress.so /lib/uncompress.so /usr/lib64/uncompress.so /usr/lib/uncompress.so )
+
+for file in ${LIST[@]}
+do
+    if test -e $file; then
+        PRELOADER=$file
+        break
+    fi
+done
+LD_LIBRARY_PATH=$PRELOADER gdb $@
