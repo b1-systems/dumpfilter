@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Coredump filter
+# Author: Daniel Poelzleithner, B1 Systems GmbH
+#         <poelzleithner@b1-systems.de>
+#
+#
+### BEGIN INIT INFO
+# Provides:          dumpfilter
+# Required-Start:
+# Should-Start:      
+# Required-Stop:
+# Should-Stop:       $null
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Advanced coredump filter
+# Description:       Enables the dumpfilter to catch coredumps
+### END INIT INFO
+ 
+. /etc/rc.status
+ 
+# Reset status of this service
+rc_reset
+ 
+case "$1" in
+    start)
+    echo -n "Enable dumpfilter"
+    echo '|/usr/sbin/dumpfilter %p' > /proc/sys/kernel/core_pattern
+    ;;
+    stop)
+    ;;
+    *)
+    echo "Usage: $0 {start|stop}"
+    exit 1
+    ;;
+esac
+rc_exit
