@@ -5,6 +5,7 @@ install(FILES dumpfilter.ini
 install(FILES dumpfilter.gdb
         DESTINATION ${CONFIG_PREFIX}/dumpfilter)
 install(PROGRAMS dumpfilter.init
+        RENAME dumpfilter
         DESTINATION ${CONFIG_PREFIX}/init.d)
 install(PROGRAMS dumpfilter.py
         RENAME dumpfilter
