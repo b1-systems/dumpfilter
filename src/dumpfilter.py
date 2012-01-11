@@ -92,7 +92,7 @@ class Compressor(object):
         self.out_fd = open(self.output, "w")
         try:
             self.pipe = subprocess.Popen(["pigz", "-%s" %level, ], shell=False, stdin=subprocess.PIPE, stdout=self.out_fd, bufsize=1024**2)
-        except (OSError, e):
+        except:
             self.pipe = None
             self.out_fd = gzip.GzipFile(filename=self.output, mode="w", compresslevel=self.level)
 
