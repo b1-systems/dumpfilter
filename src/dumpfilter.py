@@ -5,6 +5,8 @@
 # advanced core dump filter
 ###
 
+VERSION=(0,1,0)
+
 import sys
 try:
     import ConfigParser
