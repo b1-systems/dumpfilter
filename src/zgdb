@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LIST=( /lib64/uncompress.so /lib/uncompress.so /usr/lib64/uncompress.so /usr/lib/uncompress.so )
+LIST=( /usr/local/lib64/uncompress.so /usr/local/lib/uncompress.so /lib64/uncompress.so /lib/uncompress.so /usr/lib64/uncompress.so /usr/lib/uncompress.so )
 
 for file in ${LIST[@]}
 do
@@ -9,4 +9,6 @@ do
         break
     fi
 done
-LD_LIBRARY_PATH=$PRELOADER gdb $@
+#FIXME do s/.gz// on arguments
+echo "Use preloader $PRELOADER"
+LD_PRELOAD=$PRELOADER gdb $@
