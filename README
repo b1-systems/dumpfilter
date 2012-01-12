@@ -1,0 +1,27 @@
+dumpfilter - Linux coredump filter
+
+dumpfilter is a configureable helper script that allows you to control how
+coredumps of crashed applications are created.
+
+- Creates a core.info file, with collected informations about the dying process
+  It also attaches custom commands run after the core dump into the info file.
+  By default gdb is run to print the backtrace and registers.
+- Compresses the core file with gzip, allowing the dump process to be faster
+  If you write to a nfs mount, it will be much faster. Install pigz for max performance.
+- Ensures free space (10% default) on the mountpoint it dumps
+
+
+Installation
+============
+
+ # cmake . -DCMAKE_INSTALL_PREFIX=/usr
+ # make
+ # make install
+
+To enable the filter you have to eighter:
+
+1. install and endable the init script src/dumpfilter.init
+ # update-init.rc start 99 S 
+2. edit /etc/sysctl.conf and add:
+ kernel.core_pattern = |/usr/sbin/dumpfilter.py %p
+

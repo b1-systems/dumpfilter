@@ -23,6 +23,8 @@ Source2:    src/dumpfilter.init
 Source3:    src/dumpfilter.gdb
 BuildRoot:  %{_tmppath}/%{name}-%{version}-build
 PreReq:     %insserv_prereq
+Requires:   python >= 2.6
+BuildRequires: cmake, gcc
 BuildArch:  noarch
  
 %description
