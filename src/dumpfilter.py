@@ -5,7 +5,7 @@
 # advanced core dump filter
 ###
 
-VERSION=(0,1,1)
+VERSION=(0,1,2)
 
 VERSION_STR=".".join((str(x) for x in VERSION))
 
