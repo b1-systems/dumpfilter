@@ -12,15 +12,12 @@
 # norootforbuild
  
 Name:       dumpfilter
-Version:    1
+Version:    0.1.1
 Release:    0
 License:    GPLv2
-Summary:    compresses core dumps and ensures free disk space
+Summary:    Compresses core dumps and ensures free disk space
 Group:      System
-Source:     src/dumpfilter.py
-Source1:    src/dumpfilter.ini
-Source2:    src/dumpfilter.init
-Source3:    src/dumpfilter.gdb
+Source:     dumpfilter-%{version}.tar.gz
 BuildRoot:  %{_tmppath}/%{name}-%{version}-build
 PreReq:     %insserv_prereq
 Requires:   python >= 2.6
@@ -36,15 +33,19 @@ coredumps of crashed processes.
 - ensures enough free space remains on target filesystem
  
 %prep
-cmake %{buildroot} -DCMAKE_INSTALL_PREFIX=/usr
+%setup -q
 
 %build
+cmake -DCMAKE_SKIP_RPATH=ON \
+      -DCMAKE_INSTALL_PREFIX=%{_prefix}
+%{__make} %{?jobs:-j%jobs}
+
 %install
 #install -m 0755 $RPM_SOURCE_DIR/src/dumpfilter.init $RPM_BUILD_ROOT/etc/init.d/dumpfilter
 #install -m 0755 $RPM_ROOT_DIR/src/dumpfilter.py $RPM_BUILD_ROOT/usr/sbin/dumpfilter
 #install $RPM_ROOT_DIR/src/dumpfilter.ini $RPM_BUILD_ROOT/etc/dumpfilter/dumpfilter.ini
 #install $RPM_ROOT_DIR/src/dumpfilter.gdb $RPM_BUILD_ROOT/etc/dumpfilter/dumpfilter.gdb
-%make_install 
+%{__make} DESTDIR=%{buildroot} install
  
 %clean
 %{?buildroot:%__rm -rf "%{buildroot}"}
@@ -55,9 +56,13 @@ cmake %{buildroot} -DCMAKE_INSTALL_PREFIX=/usr
 %postun
 %insserv_cleanup
  
+%preun
+%stop_on_removal
+
 %files
 %defattr(-,root,root)
 /etc/init.d/dumpfilter
+%dir /etc/dumpfilter
 %config /etc/dumpfilter/*
 /usr/sbin/dumpfilter
  
