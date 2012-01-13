@@ -5,7 +5,9 @@
 # advanced core dump filter
 ###
 
-VERSION=(0,1,0)
+VERSION=(0,1,1)
+
+VERSION_STR=".".join((str(x) for x in VERSION))
 
 import sys
 try:
@@ -16,7 +18,6 @@ import os, os.path
 import functools
 import gzip
 import subprocess
-import collections
 import datetime
 import shlex
 import syslog
@@ -27,7 +28,128 @@ config = ConfigParser.SafeConfigParser()
 
 syslog.openlog("dumpfilter")
 
-class Process(collections.OrderedDict):
+PREFIX = ""
+def slog(*args, **kwargs):
+    if len(args) == 1:
+        nargs = ("%s%s" %(PREFIX, args[0]),)
+    else:
+        nargs = (args[0],) + ("%s%s" %(PREFIX, args[1]),) + args[2:]
+
+    syslog.syslog(*nargs, **kwargs)
+
+try:
+    from collections import OrderedDict
+except:
+    # python2.6 fallback
+    from UserDict import DictMixin
+
+    class OrderedDict(dict, DictMixin):
+
+        def __init__(self, *args, **kwds):
+            if len(args) > 1:
+                raise TypeError('expected at most 1 arguments, got %d' % len(args))
+            try:
+                self.__end
+            except AttributeError:
+                self.clear()
+            self.update(*args, **kwds)
+
+        def clear(self):
+            self.__end = end = []
+            end += [None, end, end]         # sentinel node for doubly linked list
+            self.__map = {}                 # key --> [key, prev, next]
+            dict.clear(self)
+
+        def __setitem__(self, key, value):
+            if key not in self:
+                end = self.__end
+                curr = end[1]
+                curr[2] = end[1] = self.__map[key] = [key, curr, end]
+            dict.__setitem__(self, key, value)
+
+        def __delitem__(self, key):
+            dict.__delitem__(self, key)
+            key, prev, next = self.__map.pop(key)
+            prev[2] = next
+            next[1] = prev
+
+        def __iter__(self):
+            end = self.__end
+            curr = end[2]
+            while curr is not end:
+                yield curr[0]
+                curr = curr[2]
+
+        def __reversed__(self):
+            end = self.__end
+            curr = end[1]
+            while curr is not end:
+                yield curr[0]
+                curr = curr[1]
+
+        def popitem(self, last=True):
+            if not self:
+                raise KeyError('dictionary is empty')
+            if last:
+                key = reversed(self).next()
+            else:
+                key = iter(self).next()
+            value = self.pop(key)
+            return key, value
+
+        def __reduce__(self):
+            items = [[k, self[k]] for k in self]
+            tmp = self.__map, self.__end
+            del self.__map, self.__end
+            inst_dict = vars(self).copy()
+            self.__map, self.__end = tmp
+            if inst_dict:
+                return (self.__class__, (items,), inst_dict)
+            return self.__class__, (items,)
+
+        def keys(self):
+            return list(self)
+
+        setdefault = DictMixin.setdefault
+        update = DictMixin.update
+        pop = DictMixin.pop
+        values = DictMixin.values
+        items = DictMixin.items
+        iterkeys = DictMixin.iterkeys
+        itervalues = DictMixin.itervalues
+        iteritems = DictMixin.iteritems
+
+        def __repr__(self):
+            if not self:
+                return '%s()' % (self.__class__.__name__,)
+            return '%s(%r)' % (self.__class__.__name__, self.items())
+
+        def copy(self):
+            return self.__class__(self)
+
+        @classmethod
+        def fromkeys(cls, iterable, value=None):
+            d = cls()
+            for key in iterable:
+                d[key] = value
+            return d
+
+        def __eq__(self, other):
+            if isinstance(other, OrderedDict):
+                if len(self) != len(other):
+                    return False
+                for p, q in  zip(self.items(), other.items()):
+                    if p != q:
+                        return False
+                return True
+            return dict.__eq__(self, other)
+
+        def __ne__(self, other):
+            return not self == other
+
+# DUMPFILTER
+
+class Process(OrderedDict):
     def __init__(self, pid):
         super(Process, self).__init__()
         self.pid = pid
@@ -60,7 +182,12 @@ class Process(collections.OrderedDict):
             fp.write("%s:%s\n" %(k, v)) 
 
     def dump_file(self, template, rv_handle=False):
-        fp = open(self.expand(template), "w+")
+        path = self.expand(template)
+        try:
+            fp = open(path, "w+")
+        except IOError, e:
+            slog("can't write info file %s: %s" %(path, e.strerror))
+            return False
         self.dump(fp)
         if rv_handle:
             return fp
@@ -109,10 +236,10 @@ class Compressor(object):
         if self.pipe:
             self.pipe.stdin.close()
             if self.pipe.wait() != 0:
-                syslog.syslog(syslog.LOG_ERR, "There were errors in gzip pipe")
+                slog(syslog.LOG_ERR, "There were errors in gzip pipe")
         else:
             self.out_fd.close()
-        syslog.syslog(syslog.LOG_CRIT, "program crashed with coredump: %s" %self.output_real)
+        slog(syslog.LOG_CRIT, "program crashed with coredump: %s" %self.output_real)
 
     def remove(self):
         self.out_fd.close()
@@ -168,7 +295,11 @@ class Compressor(object):
 
 def dump_file(process):
     outpath = process.expand(config.get("general", "path"))
-    out = Compressor(outpath)
+    try:
+        out = Compressor(outpath)
+    except IOError, e:
+	slog("can't write coredump image: " + e.strerror)
+        return False
     run = 0
 
     while True:
@@ -188,15 +319,17 @@ def dump_file(process):
                  break
             run = 10 
         run -= 1
-
+    return True
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        sys.stdout.write("not enough arguments\n")
+        sys.stdout.write("dumpfilter version %s\n" %VERSION_STR)
+        sys.stdout.write("error: not enough arguments\n")
         sys.exit(1)
     
     process = Process(sys.argv[1])
+    PREFIX = "%s " %sys.argv[1]
     # change output working dir to process path and drop to user
     os.chdir(process["cwd"])
     os.setuid(process.dump_uid)
@@ -206,6 +339,9 @@ if __name__ == "__main__":
     # dump info file
     handle = process.dump_file(config.get("general", "path_info"), True)
     # execute commands
+    if not handle:
+        slog("Can't write info file, skipping commands")
+        sys.exit(0)
     if config.has_section("commands"):
         for cn in config.options("commands"):
             handle.write("=" * 40 + "\n")
@@ -218,7 +354,7 @@ if __name__ == "__main__":
                 # for some unknown reason, the pipe version with wait does not work... ?!?
                 #if sub.wait() != 0:
                 #    handle.write("exited with error code: " + sub.returncode)
-            except (Exception, e):
+            except Exception, e:
                 handle.write("\n" + str(e) + "\n")
             handle.write("=" * 40 + "\n")
     handle.close()
