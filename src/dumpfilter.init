@@ -11,27 +11,41 @@
 # Should-Start:      
 # Required-Stop:
 # Should-Stop:       $null
-# Default-Start:     3 5
-# Default-Stop:      0 1 2 6
+# Default-Start:     S
 # Short-Description: Advanced coredump filter
 # Description:       Enables the dumpfilter to catch coredumps
 ### END INIT INFO
- 
-. /etc/rc.status
- 
-# Reset status of this service
-rc_reset
+
+if [ -e /etc/rc.status ]; then
+  . /etc/rc.status
+  # Reset status of this service
+  rc_reset
+fi
+
  
 case "$1" in
     start)
-    echo -n "Enable dumpfilter"
-    echo '|/usr/sbin/dumpfilter %p' > /proc/sys/kernel/core_pattern
+    echo "Enable dumpfilter"
+    #echo '|/usr/sbin/dumpfilter %p' > /proc/sys/kernel/core_pattern
+    if [ ! -e /var/run/dumpfilter.old ]; then
+        sysctl -n kernel.core_pattern > /var/run/dumpfilter.old
+    fi
+    sysctl kernel.core_pattern='|/usr/sbin/dumpfilter %p'
     ;;
     stop)
+    if [ -e /var/run/dumpfilter.old ]; then
+        TMP=`cat /var/run/dumpfilter.old`
+        sysctl kernel.core_pattern="$TMP"
+        rm -f /var/run/dumpfilter.old
+    else
+       sysctl kernel.core_pattern='core'
+    fi
     ;;
     *)
     echo "Usage: $0 {start|stop}"
     exit 1
     ;;
 esac
+if [ type -t rc_exit 2>/dev/null ]; then
 rc_exit
+fi
