@@ -5,7 +5,7 @@
 # advanced core dump filter
 ###
 
-VERSION=(0,1,3)
+VERSION=(0,2,0)
 
 VERSION_STR=".".join((str(x) for x in VERSION))
 
@@ -303,7 +303,7 @@ def dump_file(process):
     run = 0
 
     while True:
-        chunk = sys.stdin.read()
+        chunk = sys.stdin.read(10485760) # 10 mb buffer
         if not chunk:
             out.close()
             break

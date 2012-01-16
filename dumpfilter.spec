@@ -12,15 +12,15 @@
 # norootforbuild
  
 Name:       dumpfilter
-Version:    0.1.3
-Release:    0
+Version:    0.2.0
+Release:    2
 License:    GPLv2
 Summary:    Compresses core dumps and ensures free disk space
 Group:      System
 Source:     dumpfilter-%{version}.tar.gz
 BuildRoot:  %{_tmppath}/%{name}-%{version}-build
 PreReq:     %insserv_prereq
-Requires:   python >= 2.6
+Requires:   python >= 2.6, zlibc
 BuildRequires: cmake, gcc
 BuildArch:  noarch
  
@@ -52,6 +52,7 @@ cmake -DCMAKE_SKIP_RPATH=ON \
  
 %post
 %{insserv_force_if_yast dumpfilter}
+/etc/init.d/dumpfilter start
  
 %postun
 %insserv_cleanup
