@@ -7,13 +7,14 @@
 #
 ### BEGIN INIT INFO
 # Provides:          dumpfilter
-# Required-Start:
-# Should-Start:      
-# Required-Stop:
-# Should-Stop:       $null
-# Default-Start:     S
-# Short-Description: Advanced coredump filter
+# Required-Start:    boot.proc $local_fs
+# Should-Start:      boot.sysctl sysstat
+# Required-Stop:     boot.proc $local_fs
+# Should-Stop:       boot.sysctl sysstat
+# Default-Start:     B
+# Default-Stop:
 # Description:       Enables the dumpfilter to catch coredumps
+# Short-Description: Enables the dumpfilter to catch coredumps
 ### END INIT INFO
 
 if [ -e /etc/rc.status ]; then
