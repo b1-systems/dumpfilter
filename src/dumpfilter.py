@@ -6,7 +6,7 @@
 # BSD License
 ###
 
-VERSION=(0,2,0)
+VERSION=(0,2,1)
 
 VERSION_STR=".".join((str(x) for x in VERSION))
 

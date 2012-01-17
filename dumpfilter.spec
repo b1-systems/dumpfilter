@@ -12,8 +12,8 @@
 # norootforbuild
  
 Name:       dumpfilter
-Version:    0.2.0
-Release:    2
+Version:    0.2.1
+Release:    0
 License:    GPLv2
 Summary:    Compresses core dumps and ensures free disk space
 Group:      System
