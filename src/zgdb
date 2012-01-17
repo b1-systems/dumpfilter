@@ -9,6 +9,15 @@ do
         break
     fi
 done
+
+# remove .gz suffixes
+NARGS=( )
+for arg in "$@"
+do
+    NARGS[${#NARGS[*]}]=${arg/.gz/}
+done
+
 #FIXME do s/.gz// on arguments
 echo "Use preloader $PRELOADER"
-LD_PRELOAD=$PRELOADER gdb $@
+export LD_PRELOAD=$PRELOADER
+exec -a zgdb gdb ${NARGS[@]}
