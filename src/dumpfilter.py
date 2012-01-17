@@ -2,7 +2,8 @@
 
 ###
 # dumpfilter
-# advanced core dump filter
+# advanced core dump filter for Linux
+# BSD License
 ###
 
 VERSION=(0,2,0)
